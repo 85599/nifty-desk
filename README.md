@@ -3,6 +3,12 @@
 **Drop a screenshot of your broker's net-position grid. Get back a live, ready-to-use NIFTY
 options workbook.**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/85599/nifty-desk?color=blue)](https://github.com/85599/nifty-desk/releases/tag/v1.0.0)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D6)](#run-it)
+[![Python](https://img.shields.io/badge/python-3.9%2B-3776AB)](requirements.txt)
+[![Stars](https://img.shields.io/github/stars/85599/nifty-desk?style=social)](https://github.com/85599/nifty-desk/stargazers)
+
 ![Nifty Desk](docs/assets/hero.png)
 
 ---
@@ -99,3 +105,11 @@ Then open `http://127.0.0.1:8765/`. On Windows you can double-click `Run Nifty D
   NSE quote request. Your positions and screenshots stay local.
 - This is a risk-visibility and bookkeeping tool, not investment advice. Trading in derivatives
   carries substantial risk.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Free to use, modify and redistribute. No warranty, and nothing here is
+investment advice.
+
+If this saves you one stale-rate surprise, [a star](https://github.com/85599/nifty-desk/stargazers)
+helps the next trader find it.
