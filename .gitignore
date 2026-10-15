@@ -1,0 +1,19 @@
+# local app data - never commit
+config.json
+output/
+*.xlsx
+server.log
+.env
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# one-off investigation scripts that read the private reference workbook
+dump_blocks.py
+dump_layout.py
+dump_rows.py
+dump_style.py
+check_sheet1.py

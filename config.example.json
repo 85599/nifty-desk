@@ -1,0 +1,11 @@
+{
+  "symbol": "NIFTY",
+  "only_symbol": true,
+  "drop_closed": true,
+  "step": 50,
+  "span": 600,
+  "lot": 0,
+  "expiry": "",
+  "output_dir": "",
+  "ocr_scale": 2.0
+}

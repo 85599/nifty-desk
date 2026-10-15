@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nifty Desk - screenshot to Excel</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="dot"></span>
+    <h1>NIFTY DESK</h1>
+    <span class="sub">ODIN screenshot &rarr; Excel</span>
+  </div>
+  <div class="live" id="liveChip">
+    <span class="muted">no live data yet</span>
+  </div>
+  <div class="headActions">
+    <button id="btnLive" class="ghost">Fetch live rates</button>
+    <button id="btnBuild" class="primary">Build Excel</button>
+    <button id="btnOpen" class="ghost" disabled>Open file</button>
+  </div>
+</header>
+
+<main>
+  <section class="panel drop" id="drop">
+    <div class="dropInner" id="dropInner">
+      <div class="dropIcon">&#128247;</div>
+      <p><strong>Drop the ODIN net-position screenshot here</strong></p>
+      <p class="muted">or click to browse &nbsp;&middot;&nbsp; or press <kbd>Ctrl</kbd>+<kbd>V</kbd> after copying the screen</p>
+      <p class="muted small">Use the Integrated Net Position window. Keep all rows visible.</p>
+    </div>
+    <div class="preview hidden" id="preview">
+      <img id="previewImg" alt="screenshot">
+      <div class="previewBar">
+        <span id="previewName" class="muted small"></span>
+        <button class="tiny" id="btnAgain">Replace</button>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" hidden>
+  </section>
+
+  <section class="panel side">
+    <h2>Settings</h2>
+    <label>Expiry
+      <select id="expiry"><option value="">auto (nearest)</option></select>
+    </label>
+    <div class="row2">
+      <label>Strike gap
+        <select id="step"><option>50</option><option>100</option></select>
+      </label>
+      <label>Ladder &plusmn; points
+        <input type="number" id="span" value="600" step="100" min="100">
+      </label>
+    </div>
+    <div class="row2">
+      <label>Lot size
+        <input type="number" id="lot" value="0" min="0" title="0 = detect from the screenshot">
+      </label>
+      <label>Output folder
+        <input type="text" id="outdir" placeholder=".../nifty-tool/output">
+      </label>
+    </div>
+    <label class="check"><input type="checkbox" id="onlyNifty" checked> NIFTY rows only</label>
+    <label class="check"><input type="checkbox" id="dropClosed" checked> Hide fully closed (net qty 0)</label>
+    <label class="check"><input type="checkbox" id="autoLive" checked> Live rates every 5 minutes</label>
+    <p class="hint" id="autoNote">The workbook file rewrites itself with fresh NSE rates, so it is
+      never more than five minutes old.</p>
+    <p class="hint">Lot size 0 means auto: it takes the biggest number that divides every
+      quantity in the screenshot, which is the real lot the terminal used.</p>
+  </section>
+
+  <section class="panel wide">
+    <div class="panelHead">
+      <h2>Positions <span class="muted" id="posCount"></span></h2>
+      <div class="headTools">
+        <span class="muted small">Cells in <span class="amberTxt">amber</span> were unclear in the OCR &mdash; click to fix.</span>
+        <button class="tiny" id="btnAdd">+ row</button>
+      </div>
+    </div>
+    <div class="warn" id="warn"></div>
+    <div class="tableWrap">
+      <table id="grid">
+        <thead><tr id="headRow"></tr></thead>
+        <tbody id="body"></tbody>
+        <tfoot><tr id="foot"></tr></tfoot>
+      </table>
+      <p class="empty" id="empty">No rows yet. Drop a screenshot to begin.</p>
+    </div>
+  </section>
+
+  <section class="panel wide log">
+    <h2>Activity</h2>
+    <div id="log"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
