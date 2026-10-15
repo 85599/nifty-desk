@@ -7,7 +7,6 @@ options workbook.**
 [![Release](https://img.shields.io/github/v/release/85599/nifty-desk?color=blue)](https://github.com/85599/nifty-desk/releases/tag/v1.0.0)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6)](#run-it)
 [![Python](https://img.shields.io/badge/python-3.9%2B-3776AB)](requirements.txt)
-[![Stars](https://img.shields.io/github/stars/85599/nifty-desk?style=social)](https://github.com/85599/nifty-desk/stargazers)
 
 ![Nifty Desk](docs/assets/hero.png)
 
