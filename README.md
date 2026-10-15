@@ -59,6 +59,13 @@ so you can type into them by hand), `CP IF <spot>` scenario columns at a 100-poi
 a PE section, a futures line, and a grand `TOTAL`. Every scenario cell is a live IF formula, so
 editing a quantity or a rate recalculates the whole grid. Each expiry prints on its own page.
 
+## The workbook, opened in Excel
+
+This is real generated output — the CE and PE blocks for one expiry, live `CP IF` scenario grid,
+zero rows you can type into, and the grand `TOTAL`:
+
+![generated workbook](docs/assets/excel.png)
+
 ---
 
 ## Run it
