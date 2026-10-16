@@ -124,6 +124,14 @@ def detect_lot(records: list[dict], fallback: int = 75) -> int:
     return lot if 1 <= lot <= 200 else fallback
 
 
+def matches_symbol(sym: str, target: str) -> bool:
+    """Is this row one of the book's own?
+    Some grids draw a vertical bar before the symbol cell and Windows OCR merges it into the
+    word, so 'INIFTY' is the same position as 'NIFTY'. Prefix only, never a substring: BANKNIFTY
+    ends with NIFTY but must not land on a NIFTY sheet."""
+    return any(s.startswith(target) for s in (sym, sym.lstrip("I|l1!")))
+
+
 def nse() -> nse_live.NseClient:
     client = STATE.get("nse")
     if client is None:
@@ -260,7 +268,7 @@ def api_ocr():
         today = dt.date.today().isoformat()
         records = parse_grid.to_records(grid_rows, dates, today)
         if cfg.get("only_symbol", True):
-            kept = [r for r in records if r["symbol"].startswith(cfg["symbol"])]
+            kept = [r for r in records if matches_symbol(r["symbol"], cfg["symbol"])]
             dropped = len(records) - len(kept)
             records = kept
             if dropped:

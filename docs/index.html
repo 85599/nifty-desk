@@ -232,19 +232,23 @@ python server.py</code></pre>
     <details open>
       <summary>I dropped a screenshot and it read 0 rows. What now?</summary>
       <div class="body">
-        <p>The Activity log tells you which of three things happened — read that line first:</p>
+        <p>The Activity log tells you which of these happened — read that line first:</p>
         <ul class="ticks">
           <li><b>"none of them formed the ODIN position grid"</b> — OCR read text but could not
-            recognise the table. Usually the screenshot is cropped so the <b>header row is missing</b>,
-            or it is a different broker's ODIN build with extra columns. Capture the whole grid
-            including its header line and try again.</li>
+            recognise the table. Usually the screenshot is cropped so the <b>header row is missing</b>.
+            Capture the whole grid including its header line and try again.</li>
+          <li><b>"does not follow the standard ODIN column layout"</b> — that broker's grid has its
+            columns rearranged or some of them hidden. Only the columns its own header spells out are
+            read, so Net Qty, Market Price and MTM still land in the right cells and nothing is
+            guessed at. Show the rest in the terminal to bring the averages in too.</li>
           <li><b>"no text at all"</b> — the English OCR recogniser is not installed on that machine.
             Add English under <b>Settings → Time &amp; Language → Language</b>, then retry.</li>
           <li><b>"every row was filtered out"</b> — the grid parsed fine, but your settings hid it.
             Untick <i>NIFTY rows only</i> or <i>Hide fully closed</i>.</li>
         </ul>
         <p style="margin-bottom:0">If the log shows the raw text it read and it still looks wrong,
-          send that screenshot — the parser is tuned to one ODIN layout and other brokers differ.</p>
+          send that screenshot — brokers ship different ODIN builds and each one gets the parser
+          tuned to it.</p>
       </div>
     </details>
 

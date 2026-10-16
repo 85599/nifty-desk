@@ -13,7 +13,9 @@ from typing import Any
 
 MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 
-# the seven numeric columns, left to right, after Strike/Option in the ODIN grid
+# ODIN's standard layout: the seven value columns, left to right, after Strike/Option. Only used
+# as a template once the header anchors confirm it (see _name_groups) - some brokers rearrange or
+# drop columns, and filling by x order alone then writes the wrong column's number into the sheet.
 NUMERIC_COLUMNS = ["netqty", "mtm", "buyqty", "buyavg", "sellqty", "sellavg", "mktprice"]
 
 COLUMN_LABELS = {
@@ -27,7 +29,7 @@ COLUMN_LABELS = {
 HEADER_KEYS = {
     "symbol": ("mbol", "symbol", "smbol"),
     "expiry": ("serexp", "sexp", "expiry", "serex"),
-    "strike": ("strike", "trike", "strikeprice"),
+    "strike": ("strike", "trike", "strikeprice", "strke", "stnke", "strtke", "srke"),
     "otype": ("option", "otion", "opttype"),
     "netqty": ("net", "netqty"),
     "mtm": ("mtm",),
@@ -56,6 +58,13 @@ class GridRow:
 
 def _squash(text: str) -> str:
     return re.sub(r"[^a-z0-9.]", "", text.lower())
+
+
+# Windows OCR mis-reads the ODIN header titles constantly ("Strke", "otiont", "sbol"), so the
+# header gate has to match corrupted spellings. HEADER_KEYS already tolerates these for naming
+# columns; the gate must stay in step with it or a readable header is treated as absent.
+STRIKE_WORDS = ("strike", "strke", "stnke", "strtke", "srke", "trike", "shike")
+VALUE_WORDS = ("net", "mtm", "market", "mrkt")
 
 
 def _cluster_rows(words: list[dict], tol: float) -> list[tuple[float, list[dict]]]:
@@ -88,9 +97,9 @@ def _cluster_columns(items: list[tuple[float, dict]], gap: float) -> list[list[d
     return groups
 
 
-def _header_anchors(header_words: list[dict], width: float) -> dict[str, float]:
-    """x position per column, from whichever header titles still read cleanly."""
-    anchors: dict[str, float] = {}
+def _header_anchors(header_words: list[dict]) -> dict[str, tuple[float, float]]:
+    """x span per column, from whichever header titles still read cleanly."""
+    anchors: dict[str, tuple[float, float]] = {}
     for w in header_words:
         blob = _squash(w["t"])
         if len(blob) < 3:
@@ -99,14 +108,66 @@ def _header_anchors(header_words: list[dict], width: float) -> dict[str, float]:
             if name in anchors:
                 continue
             if any(k.startswith(blob) or blob.startswith(k) or k in blob for k in keys):
-                anchors[name] = w["x"]
+                anchors[name] = (w["x"], w["x"] + w["w"])
                 break
     return anchors
 
 
-def _name_groups(groups: list[list[dict]], anchors: dict[str, float], width: float) -> dict[int, str]:
-    """Assign a column name to every x-cluster of data tokens."""
+def _span(group: list[dict]) -> tuple[float, float]:
+    return min(w["x"] for w in group), max(w["x"] + w["w"] for w in group)
+
+
+def _center(group: list[dict]) -> float:
+    return sum(w["x"] + w["w"] / 2 for w in group) / len(group)
+
+
+def _gap(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """0 when the two x ranges overlap, otherwise the distance between them."""
+    return max(0.0, a[0] - b[1], b[0] - a[1])
+
+
+def _match_by_anchors(groups: list[list[dict]], names: list[str],
+                      anchors: dict[str, tuple[float, float]], tol: float) -> dict[int, str]:
+    """Pin data clusters to the header columns that read cleanly: nearest overlap first, and never
+    two matches that cross, since one row cannot reorder the columns the header itself lists."""
+    ordered = sorted((n for n in names if n in anchors), key=lambda n: anchors[n][0])
+    cands = []
+    for i, g in enumerate(groups):
+        lo, hi = _span(g)
+        cx = (lo + hi) / 2
+        for j, name in enumerate(ordered):
+            a = anchors[name]
+            d = _gap((lo, hi), a)
+            if d <= tol:
+                cands.append((d, abs(cx - (a[0] + a[1]) / 2), i, j, name))
+    cands.sort()
+    pairs: dict[int, tuple[int, str]] = {}
+    used: set[int] = set()
+    for _, _, i, j, name in cands:
+        if i in pairs or j in used:
+            continue
+        if any((i - gi) * (j - gj) < 0 for gi, (gj, _) in pairs.items()):
+            continue
+        pairs[i] = (j, name)
+        used.add(j)
+    return {i: name for i, (_, name) in pairs.items()}
+
+
+def _is_money(group: list[dict]) -> bool:
+    """Mostly numbers with a non-zero fraction: a price or a value, never an index quantity."""
+    nums = [v for v in (clean_number(w["t"]) for w in group) if v is not None]
+    if not nums:
+        return False
+    return sum(1 for v in nums if abs(v % 1) > 0.01) / len(nums) >= 0.5
+
+
+def _name_groups(groups: list[list[dict]], anchors: dict[str, tuple[float, float]],
+                 width: float) -> tuple[dict[int, str], list[str]]:
+    """Assign a column name to every x-cluster of data tokens, plus notes on anything the
+    naming had to refuse. Wrong numbers are worse than missing ones in a risk sheet, so an
+    unconfirmed layout is reported instead of guessed at."""
     named: dict[int, str] = {}
+    notes: list[str] = []
     numeric: list[int] = []
     for i, g in enumerate(groups):
         texts = [w["t"] for w in g]
@@ -118,43 +179,41 @@ def _name_groups(groups: list[list[dict]], anchors: dict[str, float], width: flo
         else:
             numeric.append(i)
     if not numeric:
-        return named
+        return named, notes
 
-    def center(i: int) -> float:
-        return sum(w["x"] + w["w"] / 2 for w in groups[i]) / len(groups[i])
-
-    numeric.sort(key=center)
+    numeric.sort(key=lambda i: _center(groups[i]))
     if "strike" in anchors:
-        near = min(numeric, key=lambda i: abs(center(i) - anchors["strike"]))
-        if abs(center(near) - anchors["strike"]) < 0.10 * width:
+        near = min(numeric, key=lambda i: _gap(_span(groups[i]), anchors["strike"]))
+        if _gap(_span(groups[near]), anchors["strike"]) < 0.10 * width:
             named[near] = "strike"
             numeric.remove(near)
     elif numeric:
         named[numeric[0]] = "strike"
         numeric.remove(numeric[0])
 
-    if len(numeric) == len(NUMERIC_COLUMNS):
-        # the everyday case: all seven value columns are present, so x order alone names them
-        for name, i in zip(NUMERIC_COLUMNS, numeric):
-            named[i] = name
-        return named
+    pinned = _match_by_anchors([groups[i] for i in numeric], NUMERIC_COLUMNS, anchors, 0.02 * width)
+    for k, name in pinned.items():
+        named[numeric[k]] = name
 
-    # a column empty on every row: pin the ones the header names, then fill the rest in order
-    used = set(named.values())
-    rest = list(numeric)
-    for i in numeric:
-        cands = [n for n in NUMERIC_COLUMNS if n not in used and n in anchors]
-        if not cands:
-            continue
-        best = min(cands, key=lambda n: abs(center(i) - anchors[n]))
-        if abs(center(i) - anchors[best]) < 0.10 * width:
-            named[i] = best
-            used.add(best)
-            rest.remove(i)
-    free_names = [n for n in NUMERIC_COLUMNS if n not in used]
-    for name, i in zip(free_names, rest):
-        named[i] = name
-    return named
+    # the x-order template is used only when the header puts every column it names where the
+    # template says it is, or when nothing read cleanly and the cluster count matches exactly
+    fits_template = all(NUMERIC_COLUMNS.index(named[numeric[k]]) == k for k in pinned)
+    if fits_template and (pinned or len(numeric) == len(NUMERIC_COLUMNS)):
+        for pos, name in enumerate(NUMERIC_COLUMNS):
+            if pos < len(numeric) and numeric[pos] not in named:
+                named[numeric[pos]] = name
+    elif pinned or len(numeric) != len(NUMERIC_COLUMNS):
+        notes.append("This grid does not follow the standard ODIN column layout (its columns are "
+                     "rearranged, or some of them are hidden), so only the columns its own header "
+                     "spells out were read. Show the rest in the terminal to bring them in too.")
+
+    qty_group = next((i for i, n in named.items() if n == "netqty"), None)
+    if qty_group is not None and _is_money(groups[qty_group]):
+        del named[qty_group]
+        notes.append("The column its header labels Net Qty holds money values instead of "
+                     "quantities, so it was ignored. Check the capture is the Integrated Net "
+                     "Position window with its own columns showing.")
+    return named, notes
 
 
 def parse_grid(ocr: dict) -> tuple[list[GridRow], list[str]]:
@@ -169,7 +228,7 @@ def parse_grid(ocr: dict) -> tuple[list[GridRow], list[str]]:
     header_words, header_cy = None, 0.0
     for cy, r in rows:
         blob = _squash(" ".join(w["t"] for w in r))
-        if "strike" in blob and ("net" in blob or "mtm" in blob):
+        if any(v in blob for v in STRIKE_WORDS) and any(v in blob for v in VALUE_WORDS):
             header_words, header_cy = r, cy
             break
     if header_words is None:
@@ -187,8 +246,12 @@ def parse_grid(ocr: dict) -> tuple[list[GridRow], list[str]]:
             break
         if not re.match(r"^[A-Z][A-Z0-9&.\-]{1,}$", first):
             continue
-        if not any(looks_like_expiry(w["t"]) or TYPE_RE.match(w["t"]) or any(c.isdigit() for c in w["t"])
-                   for w in r[1:]):
+        if not any(looks_like_expiry(w["t"]) for w in r[1:]):
+            # every real position line carries an expiry; the window's status bar, trade log and
+            # taskbar text do not. Some brokers' grids have no (ALL) footer row to stop on, so
+            # this is what keeps that junk out of the column clustering.
+            continue
+        if not any(TYPE_RE.match(w["t"]) or any(c.isdigit() for c in w["t"]) for w in r[1:]):
             continue
         data_rows.append((cy, r))
 
@@ -197,8 +260,8 @@ def parse_grid(ocr: dict) -> tuple[list[GridRow], list[str]]:
 
     items = [(w["x"] + w["w"] / 2, w) for _, r in data_rows for w in r[1:]]
     groups = _cluster_columns(items, gap=max(28.0, 0.021 * width))
-    anchors = _header_anchors(header_words, width)
-    names = _name_groups(groups, anchors, width)
+    anchors = _header_anchors(header_words)
+    names, notes = _name_groups(groups, anchors, width)
     column_of = {id(w): names.get(i) for i, g in enumerate(groups) for w in g}
 
     parsed: list[GridRow] = []
@@ -211,11 +274,11 @@ def parse_grid(ocr: dict) -> tuple[list[GridRow], list[str]]:
                 grid.cells[name] = (grid.cells.get(name, "") + " " + w["t"]).strip()
         parsed.append(grid)
 
-    warnings = []
     missing = [n for n in ["expiry", "strike", "otype", *NUMERIC_COLUMNS]
                if n not in set(names.values())]
+    warnings = list(notes)
     if missing:
-        warnings.append("Could not locate these columns in the grid: "
+        warnings.append("Could not read these columns from the grid: "
                         + ", ".join(COLUMN_LABELS[m] for m in missing))
     return parsed, warnings
 

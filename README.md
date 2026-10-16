@@ -95,8 +95,12 @@ The source is right here, so you can also build it yourself with `build_exe.bat`
 The Activity log now states the exact reason instead of failing quietly:
 
 - **"none of them formed the ODIN position grid"** — OCR read text but could not recognise the
-  table. Usually the screenshot is cropped so the header row is missing, or it is a different
-  broker's ODIN build with extra columns. Capture the whole grid *including its header*.
+  table. Usually the screenshot is cropped so the header row is missing. Capture the whole grid
+  *including its header*.
+- **"does not follow the standard ODIN column layout"** — that broker's grid has its columns
+  rearranged or some of them hidden. Only the columns its own header spells out are read, so Net
+  Qty, Market Price and MTM land in the right cells and nothing is guessed at. Show the remaining
+  columns in the terminal to bring Buy/Sell averages in too.
 - **"no text at all"** — the English OCR recogniser is not installed on that machine. Add English
   under Settings → Time & Language → Language.
 - **"every row was filtered out"** — the grid parsed fine; untick *NIFTY rows only* or
