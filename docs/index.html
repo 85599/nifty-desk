@@ -210,7 +210,7 @@
 
     <h3 style="font-size:18px;margin:26px 0 8px">Option 1 — the exe (recommended if you don't have Python)</h3>
     <ol style="color:var(--ink-soft);padding-left:22px;margin:0 0 16px">
-      <li>Download <code>NiftyDesk-win64-v1.0.1.zip</code> from the <a href="https://github.com/85599/nifty-desk/releases/latest">latest release</a>.</li>
+      <li>Download the <code>NiftyDesk-win64-…&#8203;.zip</code> asset from the <a href="https://github.com/85599/nifty-desk/releases/latest">latest release</a>.</li>
       <li>Unzip it anywhere — Desktop is fine.</li>
       <li>Double-click <code>NiftyDesk.exe</code>. A console window opens and your browser follows a second later.</li>
       <li>Close the console window to stop.</li>
@@ -230,6 +230,25 @@ python server.py</code></pre>
     <h2>Questions people actually ask</h2>
 
     <details open>
+      <summary>I dropped a screenshot and it read 0 rows. What now?</summary>
+      <div class="body">
+        <p>The Activity log tells you which of three things happened — read that line first:</p>
+        <ul class="ticks">
+          <li><b>"none of them formed the ODIN position grid"</b> — OCR read text but could not
+            recognise the table. Usually the screenshot is cropped so the <b>header row is missing</b>,
+            or it is a different broker's ODIN build with extra columns. Capture the whole grid
+            including its header line and try again.</li>
+          <li><b>"no text at all"</b> — the English OCR recogniser is not installed on that machine.
+            Add English under <b>Settings → Time &amp; Language → Language</b>, then retry.</li>
+          <li><b>"every row was filtered out"</b> — the grid parsed fine, but your settings hid it.
+            Untick <i>NIFTY rows only</i> or <i>Hide fully closed</i>.</li>
+        </ul>
+        <p style="margin-bottom:0">If the log shows the raw text it read and it still looks wrong,
+          send that screenshot — the parser is tuned to one ODIN layout and other brokers differ.</p>
+      </div>
+    </details>
+
+    <details>
       <summary>Why isn't this a website I can just open?</summary>
       <div class="body">
         <p>Three hard reasons, and none of them are laziness:</p>
