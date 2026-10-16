@@ -73,6 +73,7 @@ tfoot td{background:#1d2733;font-weight:600;color:#fff;position:sticky;bottom:0}
 .log div{font-size:12.5px;color:var(--muted);padding:2px 0;border-bottom:1px solid #1a222d}
 .log div b{color:var(--txt)}
 .log .err{color:var(--red)}
+.log .ocrsample{font-family:ui-monospace,Consolas,monospace;font-size:.92em;opacity:.85;word-break:break-word}
 .toast{position:fixed;right:20px;bottom:20px;background:#20304033;border:1px solid var(--line);
   border-left:3px solid var(--accent);padding:11px 15px;border-radius:8px;background:#1b2836;
   opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;max-width:420px;z-index:50}

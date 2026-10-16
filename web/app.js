@@ -179,6 +179,11 @@ async function upload(file) {
     const expiries = [...new Set(data.records.map((r) => r.expiry).filter(Boolean))];
     if (expiries.length) log(`Expiries seen: <b>${expiries.join(", ")}</b>`);
     log(`Parsed <b>${data.records.length}</b> position row(s).`);
+    if (!data.records.length) {
+      explainEmpty(data.diagnostic);
+      render();
+      return;
+    }
     render();
     toast(`${data.records.length} rows read. Check the amber cells, then Build Excel.`, "ok");
   } catch (err) {
@@ -193,6 +198,35 @@ async function upload(file) {
 
 function showWarnings(list) {
   $("warn").innerHTML = (list || []).map((w) => `<div>${w}</div>`).join("");
+}
+
+function explainEmpty(d) {
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  let reason;
+  if (!d) {
+    reason = "No rows came back. Try a fresh screenshot of just the position grid.";
+  } else if (!d.ocr_lines) {
+    reason = `Windows OCR returned <b>no text at all</b> from this image ` +
+             `(${esc(d.image)}, language ${esc(d.language)}). Either the English OCR ` +
+             `recogniser is not installed, or the image is not a plain screenshot. ` +
+             `Add English under Settings &gt; Time &amp; Language &gt; Language, then retry.`;
+  } else if (!d.grid_rows) {
+    reason = `Windows OCR read <b>${d.ocr_lines} line(s)</b> (${esc(d.image)}, language ` +
+             `${esc(d.language)}), but <b>none of them formed the ODIN position grid</b>, so ` +
+             `nothing could be parsed. This usually means the grid has different or extra ` +
+             `columns from another broker's ODIN build, or the screenshot is cropped so the ` +
+             `header row (Symbol / Expiry / Strike / Type / Net Qty / Market Price) is missing. ` +
+             `Capture the whole grid including its header and try again.`;
+  } else {
+    reason = `The grid was read (<b>${d.grid_rows} row(s)</b>) but every row was filtered out. ` +
+             `Untick <i>NIFTY rows only</i> or <i>Hide fully closed</i> in Settings and drop the ` +
+             `screenshot again.`;
+  }
+  log(reason, true);
+  if (d && d.sample && d.sample.length) {
+    log(`What OCR actually read: <span class="ocrsample">${d.sample.map(esc).join(" · ")}</span>`, true);
+  }
+  toast("0 rows read - see the Activity log for the exact reason.", "bad");
 }
 
 const drop = $("drop");

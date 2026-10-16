@@ -114,9 +114,10 @@ def run_ocr(image_path: str, scale: float) -> dict:
 
 
 def detect_lot(records: list[dict], fallback: int = 75) -> int:
+    """0 means nothing was detected, so the UI must not claim a detected lot."""
     qtys = [r["qty"] for r in records if r.get("qty")]
     if not qtys:
-        return fallback
+        return 0
     lot = 0
     for q in qtys:
         lot = math.gcd(lot, q)
@@ -271,6 +272,17 @@ def api_ocr():
             if closed:
                 warnings.append(f"{closed} fully closed row(s) hidden (qty 0).")
             records = open_rows
+        diagnostic = None
+        if not records:
+            texts = [t for t in (ln.get("text", "").strip()
+                                 for ln in (ocr.get("lines") or [])) if t]
+            diagnostic = {
+                "language": ocr.get("language") or "unknown",
+                "ocr_lines": len(texts),
+                "image": f"{ocr.get('width', '?')}x{ocr.get('height', '?')}",
+                "grid_rows": len(grid_rows),
+                "sample": texts[:14],
+            }
         with LOCK:
             STATE["records"] = records
             STATE["warnings"] = warnings
@@ -281,7 +293,7 @@ def api_ocr():
             STATE["chain"] = {}
             STATE["auto"]["last_ts"] = 0.0
         return jsonify(records=records, warnings=warnings,
-                       detected_lot=detect_lot(records),
+                       detected_lot=detect_lot(records), diagnostic=diagnostic,
                        image="/api/image/" + os.path.basename(tmp))
     except Exception as exc:
         return jsonify(error=str(exc)), 500

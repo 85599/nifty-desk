@@ -77,7 +77,7 @@ zero rows you can type into, and the grand `TOTAL`:
 
 ### Option 1 — no Python needed
 
-Download `NiftyDesk-win64-v1.0.1.zip` from the
+Download `NiftyDesk-win64-v1.0.2.zip` from the
 [latest release](https://github.com/85599/nifty-desk/releases/latest), unzip it anywhere
 (Desktop is fine) and double-click `NiftyDesk.exe`. A console window opens, your browser tab
 follows a second later. Close the console window to stop it.
@@ -89,6 +89,18 @@ Your workbooks land in an `output` folder next to the exe, and settings persist 
 **First run, Windows says "Windows protected your PC"?** That's SmartScreen, not a virus — the
 exe is unsigned because code-signing certificates cost money. Click **More info → Run anyway**.
 The source is right here, so you can also build it yourself with `build_exe.bat`.
+
+### If it reads 0 rows
+
+The Activity log now states the exact reason instead of failing quietly:
+
+- **"none of them formed the ODIN position grid"** — OCR read text but could not recognise the
+  table. Usually the screenshot is cropped so the header row is missing, or it is a different
+  broker's ODIN build with extra columns. Capture the whole grid *including its header*.
+- **"no text at all"** — the English OCR recogniser is not installed on that machine. Add English
+  under Settings → Time & Language → Language.
+- **"every row was filtered out"** — the grid parsed fine; untick *NIFTY rows only* or
+  *Hide fully closed* in Settings.
 
 ### Option 2 — from source
 
