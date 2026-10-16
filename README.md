@@ -4,7 +4,7 @@
 options workbook.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/85599/nifty-desk?color=blue)](https://github.com/85599/nifty-desk/releases/tag/v1.0.0)
+[![Release](https://img.shields.io/github/v/release/85599/nifty-desk?color=blue)](https://github.com/85599/nifty-desk/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6)](#run-it)
 [![Python](https://img.shields.io/badge/python-3.9%2B-3776AB)](requirements.txt)
 
@@ -77,7 +77,7 @@ zero rows you can type into, and the grand `TOTAL`:
 
 ### Option 1 — no Python needed
 
-Download `NiftyDesk-win64-v1.0.0.zip` from the
+Download `NiftyDesk-win64-v1.0.1.zip` from the
 [latest release](https://github.com/85599/nifty-desk/releases/latest), unzip it anywhere
 (Desktop is fine) and double-click `NiftyDesk.exe`. A console window opens, your browser tab
 follows a second later. Close the console window to stop it.
@@ -127,6 +127,3 @@ To produce your own exe: `pip install pyinstaller` then run `build_exe.bat`.
 
 MIT — see [LICENSE](LICENSE). Free to use, modify and redistribute. No warranty, and nothing here is
 investment advice.
-
-If this saves you one stale-rate surprise, [a star](https://github.com/85599/nifty-desk/stargazers)
-helps the next trader find it.
