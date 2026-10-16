@@ -75,13 +75,31 @@ zero rows you can type into, and the grand `TOTAL`:
 
 ## Run it
 
+### Option 1 — no Python needed
+
+Download `NiftyDesk-win64-v1.0.0.zip` from the
+[latest release](https://github.com/85599/nifty-desk/releases/latest), unzip it anywhere
+(Desktop is fine) and double-click `NiftyDesk.exe`. A console window opens, your browser tab
+follows a second later. Close the console window to stop it.
+
+Your workbooks land in an `output` folder next to the exe, and settings persist in
+`config.json` beside it. If you put the exe somewhere read-only, both move to
+`%LOCALAPPDATA%\NiftyDesk`.
+
+**First run, Windows says "Windows protected your PC"?** That's SmartScreen, not a virus — the
+exe is unsigned because code-signing certificates cost money. Click **More info → Run anyway**.
+The source is right here, so you can also build it yourself with `build_exe.bat`.
+
+### Option 2 — from source
+
 ```bash
 pip install -r requirements.txt
 cp config.example.json config.json      # optional; sensible defaults are built in
 python server.py
 ```
 
-Then open `http://127.0.0.1:8765/`. On Windows you can double-click `Run Nifty Desk.bat`.
+Then open `http://127.0.0.1:8765/`. On Windows you can also double-click `Run Nifty Desk.bat`.
+To produce your own exe: `pip install pyinstaller` then run `build_exe.bat`.
 
 ## Config
 

@@ -11,6 +11,11 @@ __pycache__/
 .venv/
 venv/
 
+# pyinstaller build output - binaries ship as GitHub Release assets
+build/
+dist/
+*.spec
+
 # one-off investigation scripts that read the private reference workbook
 dump_blocks.py
 dump_layout.py

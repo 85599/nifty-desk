@@ -22,9 +22,32 @@ import build_book
 import nse_live
 import parse_grid
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-WEB = os.path.join(ROOT, "web")
-OCR_PS = os.path.join(ROOT, "ocr", "winocr.ps1")
+FROZEN = getattr(sys, "frozen", False)
+# PyInstaller unpacks read-only data files to a temp dir at startup
+BUNDLE = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+
+
+def writable_root() -> str:
+    """Homes output/ and config.json. Next to the exe, unless that dir is read-only."""
+    if not FROZEN:
+        return os.path.dirname(os.path.abspath(__file__))
+    beside = os.path.dirname(os.path.abspath(sys.executable))
+    probe = os.path.join(beside, ".niftydesk-write-test")
+    try:
+        with open(probe, "w") as fh:
+            fh.write("ok")
+        os.remove(probe)
+        return beside
+    except OSError:
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        fallback = os.path.join(base, "NiftyDesk")
+        os.makedirs(fallback, exist_ok=True)
+        return fallback
+
+
+ROOT = writable_root()
+WEB = os.path.join(BUNDLE, "web")
+OCR_PS = os.path.join(BUNDLE, "ocr", "winocr.ps1")
 OUTPUT_DIR = os.path.join(ROOT, "output")
 DESKTOP = os.path.join(os.path.expanduser("~"), "Desktop")
 
