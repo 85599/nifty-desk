@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nifty Desk — broker screenshot to live-priced NIFTY Excel workbook</title>
+<meta name="description" content="Free, open-source Windows tool. Drop a screenshot of your ODIN/SynapseWave net-position grid and get a live-priced NIFTY options workbook. Local OCR, public NSE rates, no broker login, no Python needed.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nifty Desk — screenshot in, live-priced NIFTY workbook out">
+<meta property="og:description" content="Everyone is telling you how to trade. Nobody is telling you how safe you are. Local OCR, live NSE rates, no broker login. Free and open source.">
+<meta property="og:image" content="https://85599.github.io/nifty-desk/assets/hero.png">
+<meta property="og:url" content="https://85599.github.io/nifty-desk/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Nifty Desk — screenshot to live-priced NIFTY workbook">
+<meta name="twitter:description" content="Local OCR, live NSE rates, no broker login. Windows exe, no Python needed.">
+<meta name="twitter:image" content="https://85599.github.io/nifty-desk/assets/hero.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<style>
+  :root{
+    --ink:#12151c; --ink-soft:#41465a; --muted:#6b7186;
+    --bg:#ffffff; --panel:#f5f6f9; --line:#e3e6ee;
+    --accent:#1f4bd8; --accent-ink:#ffffff;
+    --good:#0f7a45; --bad:#b3261e;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Inter,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent)}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  header.site{
+    position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line)
+  }
+  .bar{display:flex;align-items:center;gap:18px;height:60px}
+  .brand{font-weight:700;letter-spacing:-.02em;font-size:17px;text-decoration:none;color:var(--ink)}
+  .brand span{color:var(--accent)}
+  nav{margin-left:auto;display:flex;gap:22px;align-items:center}
+  nav a{text-decoration:none;color:var(--ink-soft);font-size:14.5px;font-weight:500}
+  nav a:hover{color:var(--ink)}
+  .btn{
+    display:inline-block;padding:11px 18px;border-radius:9px;font-weight:600;font-size:15px;
+    text-decoration:none;border:1px solid transparent;white-space:nowrap
+  }
+  .btn-primary{background:var(--accent);color:var(--accent-ink)}
+  .btn-primary:hover{background:#1a3fb4}
+  .btn-ghost{border-color:var(--line);color:var(--ink);background:#fff}
+  .btn-ghost:hover{border-color:var(--ink-soft)}
+  nav .btn{padding:8px 14px;font-size:14px}
+  .hero{padding:64px 0 34px;text-align:center}
+  h1{
+    font-size:clamp(30px,5.2vw,50px);line-height:1.12;letter-spacing:-.03em;
+    margin:0 auto 18px;max-width:19ch;font-weight:750
+  }
+  h1 em{font-style:normal;color:var(--accent)}
+  .sub{font-size:clamp(16px,2.1vw,19px);color:var(--ink-soft);max-width:60ch;margin:0 auto 26px}
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+  .fine{font-size:13.5px;color:var(--muted)}
+  .quote{
+    margin:44px auto 0;max-width:70ch;padding:24px 26px;border-left:4px solid var(--accent);
+    background:var(--panel);border-radius:0 12px 12px 0;text-align:left
+  }
+  .quote p{margin:0;font-size:19px;line-height:1.5;font-weight:600;letter-spacing:-.01em}
+  .quote small{display:block;margin-top:10px;color:var(--muted);font-weight:400;font-size:14px}
+  section{padding:58px 0;border-top:1px solid var(--line)}
+  h2{font-size:clamp(22px,3.2vw,30px);letter-spacing:-.02em;margin:0 0 8px;font-weight:700}
+  .lede{color:var(--ink-soft);margin:0 0 30px;max-width:66ch}
+  figure{margin:0}
+  figure img{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:12px}
+  figcaption{font-size:13.5px;color:var(--muted);margin-top:10px;text-align:center}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;margin-top:8px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
+  .step b{display:block;font-size:16px;margin-bottom:6px}
+  .step i{
+    font-style:normal;display:inline-flex;width:26px;height:26px;border-radius:50%;
+    background:var(--accent);color:#fff;align-items:center;justify-content:center;
+    font-size:13px;font-weight:700;margin-bottom:12px
+  }
+  .step p{margin:0;font-size:14.5px;color:var(--ink-soft)}
+  .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:start}
+  @media(max-width:860px){.grid2{grid-template-columns:1fr;gap:26px}}
+  ul.ticks{list-style:none;padding:0;margin:0}
+  ul.ticks li{padding-left:28px;position:relative;margin-bottom:11px;font-size:15px;color:var(--ink-soft)}
+  ul.ticks li::before{content:"✓";position:absolute;left:0;top:-1px;color:var(--good);font-weight:800}
+  .conv{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0 0}
+  @media(max-width:620px){.conv{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .card h3{margin:0 0 6px;font-size:16px}
+  .card.sell h3{color:var(--bad)} .card.buy h3{color:var(--good)}
+  .card p{margin:0;font-size:14.5px;color:var(--ink-soft)}
+  code{
+    font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px
+  }
+  pre{
+    background:#0f1219;color:#e6e9f2;padding:16px 18px;border-radius:10px;overflow:auto;
+    font:13.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace
+  }
+  pre code{background:none;border:none;color:inherit;padding:0}
+  .tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+  details{border:1px solid var(--line);border-radius:11px;padding:0;margin-bottom:12px;background:#fff}
+  details summary{
+    cursor:pointer;padding:16px 20px;font-weight:600;font-size:15.5px;list-style:none;
+    display:flex;justify-content:space-between;gap:16px;align-items:center
+  }
+  details summary::-webkit-details-marker{display:none}
+  details summary::after{content:"+";color:var(--muted);font-size:20px;line-height:1}
+  details[open] summary::after{content:"–"}
+  details .body{padding:0 20px 18px;color:var(--ink-soft);font-size:15px}
+  details .body p:first-child{margin-top:0}
+  .warn{background:#fff8e8;border:1px solid #f0dcae;border-radius:11px;padding:16px 18px;font-size:14.5px;color:#5c4708}
+  .warn b{color:#3f3105}
+  footer{border-top:1px solid var(--line);padding:34px 0 46px;color:var(--muted);font-size:14px}
+  footer .row{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+  footer a{color:var(--ink-soft)}
+  .disc{margin-top:14px;max-width:78ch;font-size:13px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap bar">
+    <a class="brand" href="./">Nifty <span>Desk</span></a>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#sheet">The sheet</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-primary" href="https://github.com/85599/nifty-desk/releases/latest">Download for Windows</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Drop your broker screenshot. Get a <em>live-priced</em> NIFTY workbook.</h1>
+    <p class="sub">Nifty Desk reads a screenshot of your net-position grid with on-device Windows OCR,
+      prices it against the public NSE option chain, and writes an Excel book laid out exactly like a
+      hand-made one — so you can see what your book is worth before the market tells you.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/85599/nifty-desk/releases/latest">Download the .exe — no Python needed</a>
+      <a class="btn btn-ghost" href="https://github.com/85599/nifty-desk">View source on GitHub</a>
+    </div>
+    <p class="fine">Free &amp; open source (MIT) · Windows · no broker login · no API key · your screenshots never leave your machine</p>
+
+    <blockquote class="quote">
+      <p>Everyone is telling you how to trade. Nobody is telling you how safe you are.</p>
+      <small>Nifty Desk does not place orders and does not promise returns. It makes the risk visible. That is the whole point.</small>
+    </blockquote>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="lede">Four steps, and the only one that touches the internet is the public NSE quote request.</p>
+    <figure>
+      <img src="assets/demo.gif" alt="Nifty Desk flow: broker screenshot loaded, positions parsed, Excel workbook generated" width="1000" height="642" loading="lazy">
+      <figcaption>Screenshot in → positions parsed → workbook out.</figcaption>
+    </figure>
+    <div class="steps" style="margin-top:30px">
+      <div class="step"><i>1</i><b>Screenshot in</b><p>Drag &amp; drop or <code>Ctrl+V</code>. Windows OCR reads the grid locally — the image never leaves your machine.</p></div>
+      <div class="step"><i>2</i><b>Positions parsed</b><p>Non-NIFTY and fully-closed rows are filtered out; lot size is auto-detected from the quantities.</p></div>
+      <div class="step"><i>3</i><b>Live rates</b><p>Spot and premiums come from the public NSE option chain. No API key. The book then refreshes itself every 5 minutes.</p></div>
+      <div class="step"><i>4</i><b>Excel out</b><p>One <code>Sheet1</code> block per expiry, each printing on its own page.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="sheet">
+  <div class="wrap">
+    <h2>The sheet, not a dashboard</h2>
+    <p class="lede">It deliberately outputs a spreadsheet rather than a pretty web chart, because the
+      output is meant to be editable. The tool is not the source of truth — your book is.</p>
+    <div class="grid2">
+      <figure>
+        <img src="assets/excel.png" alt="Generated Excel workbook showing CE and PE strike ladders, live CP IF scenario columns and the grand TOTAL row" loading="lazy">
+        <figcaption>Real generated output, opened in Excel.</figcaption>
+      </figure>
+      <div>
+        <ul class="ticks">
+          <li>Full <code>STRIKE / QTY / PREMIUM</code> ladder at a 50-point gap.</li>
+          <li><b>Zero rows included</b>, so you can type into them by hand.</li>
+          <li>CE section, PE section, a futures line, and a grand <code>TOTAL</code>.</li>
+          <li><code>CP IF &lt;spot&gt;</code> scenario columns at a 100-point gap.</li>
+          <li>Every scenario cell is a live IF formula — edit a qty or rate and the whole grid recalculates.</li>
+          <li>Premiums are round whole numbers. A premium is not a decimal point.</li>
+          <li>Each expiry prints on its own page.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="font-size:19px;letter-spacing:-.01em;margin:40px 0 6px">The sign convention that quietly breaks hand-made books</h3>
+    <p class="lede" style="margin-bottom:0">The terminal shows a short as a negative net quantity. The sheet flips that and keeps a <code>Side</code> column, because this is what makes the payoff formulas come out right.</p>
+    <div class="conv">
+      <div class="card sell"><h3>SELL → positive</h3><p>A short quantity is written as a <b>positive</b> number.</p></div>
+      <div class="card buy"><h3>BUY → negative</h3><p>A long quantity is written as a <b>negative</b> number.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Install</h2>
+    <p class="lede">Windows 10 or 11, 64-bit. Nothing else is required.</p>
+
+    <h3 style="font-size:18px;margin:26px 0 8px">Option 1 — the exe (recommended if you don't have Python)</h3>
+    <ol style="color:var(--ink-soft);padding-left:22px;margin:0 0 16px">
+      <li>Download <code>NiftyDesk-win64-v1.0.1.zip</code> from the <a href="https://github.com/85599/nifty-desk/releases/latest">latest release</a>.</li>
+      <li>Unzip it anywhere — Desktop is fine.</li>
+      <li>Double-click <code>NiftyDesk.exe</code>. A console window opens and your browser follows a second later.</li>
+      <li>Close the console window to stop.</li>
+    </ol>
+    <p class="fine" style="margin-bottom:16px">Workbooks land in an <code>output</code> folder next to the exe; settings persist in <code>config.json</code> beside it. If the exe sits somewhere read-only, both move to <code>%LOCALAPPDATA%\NiftyDesk</code>.</p>
+    <div class="warn"><b>First run: “Windows protected your PC”?</b> That’s SmartScreen, not a virus. The exe is unsigned because code-signing certificates cost money. Click <b>More info → Run anyway</b>. The full source is public, so you can also build it yourself with <code>build_exe.bat</code>.</div>
+
+    <h3 style="font-size:18px;margin:30px 0 8px">Option 2 — from source</h3>
+<pre><code>pip install -r requirements.txt
+python server.py</code></pre>
+    <p class="fine" style="margin-top:10px">Then open <code>http://127.0.0.1:8765/</code>. Or double-click <code>Run Nifty Desk.bat</code>.</p>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>Questions people actually ask</h2>
+
+    <details open>
+      <summary>Why isn't this a website I can just open?</summary>
+      <div class="body">
+        <p>Three hard reasons, and none of them are laziness:</p>
+        <ul class="ticks">
+          <li><b>OCR is local.</b> The parsing uses Windows' built-in OCR. A server doesn't have it, and shipping your broker screenshot to someone else's machine is exactly what this tool refuses to do.</li>
+          <li><b>NSE blocks datacentre IPs.</b> The public option-chain API works from a residential connection and rejects cloud hosts, so a server-side version would fail at the rate fetch.</li>
+          <li><b>The privacy promise.</b> Nothing about your positions leaves your laptop except an anonymous public quote request. Hosting it would break that.</li>
+        </ul>
+        <p style="margin-bottom:0">So: a local exe, and this page just explains it.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Does it need broker API credentials?</summary>
+      <div class="body"><p>No. There is no broker login anywhere in it. Rates come from NSE's public option-chain endpoints, the same data any website visitor can see. Your positions only ever exist as a screenshot on your own disk.</p></div>
+    </details>
+
+    <details>
+      <summary>What if OCR loses the CE/PE column on a row?</summary>
+      <div class="body"><p>It happens on real screenshots. The tool recovers the type from the sibling leg at the same strike, and where there is no sibling it compares that row's market price against the live NSE CE and PE at that strike and takes the closer one. That fixed a whole class of "my PE leg vanished" books.</p></div>
+    </details>
+
+    <details>
+      <summary>Why keep the zero rows? Looks messy.</summary>
+      <div class="body"><p>Deliberate. You will want to type into the output — adjust a leg, add a strike you're thinking about. A locked, fully-generated report is prettier and less useful. The ladder is a worksheet, not a printout.</p></div>
+    </details>
+
+    <details>
+      <summary>Does it work for stocks other than NIFTY, or on Mac?</summary>
+      <div class="body"><p>The symbol is configurable in <code>config.json</code>, but the layout and lot-size handling are tuned for NIFTY. Mac and Linux are not supported — the OCR step calls a Windows-only API.</p></div>
+    </details>
+
+    <details>
+      <summary>Will it place or square off orders?</summary>
+      <div class="body"><p>No, and it never will. It reads a screenshot and writes a spreadsheet. That separation is on purpose.</p></div>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>Nifty Desk</span>
+      <a href="https://github.com/85599/nifty-desk">GitHub</a>
+      <a href="https://github.com/85599/nifty-desk/releases/latest">Releases</a>
+      <a href="https://github.com/85599/nifty-desk/blob/main/LICENSE">MIT licence</a>
+    </div>
+    <p class="disc">This is a risk-visibility and bookkeeping tool, not investment advice. Trading in
+      derivatives carries substantial risk of loss. Verify every number yourself before you act on it.</p>
+  </div>
+</footer>
+
+</body>
+</html>
