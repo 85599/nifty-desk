@@ -61,8 +61,10 @@ formulas come out right. Premiums are written as **round whole numbers**, not de
 
 Each expiry block has: a full `STRIKE / QTY / PREMIUM` ladder at a 50-point gap (zero rows included,
 so you can type into them by hand), `CP IF <spot>` scenario columns at a 100-point gap, a CE section,
-a PE section, a futures line, and a grand `TOTAL`. Every scenario cell is a live IF formula, so
-editing a quantity or a rate recalculates the whole grid. Each expiry prints on its own page.
+a PE section, and a `NIFTY` futures line — always there, even when the screenshot holds no future, so
+you can type the position in yourself (plus for long, minus for short) — then a grand `TOTAL`. Every
+scenario cell is a live IF formula, so editing a quantity or a rate recalculates the whole grid. Each
+expiry prints on its own page.
 
 ## The workbook, opened in Excel
 
