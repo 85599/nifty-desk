@@ -8,6 +8,8 @@ options workbook.**
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6)](#run-it)
 [![Python](https://img.shields.io/badge/python-3.9%2B-3776AB)](requirements.txt)
 
+> 📖 How it works, in detail: [dev.to build write-up](https://dev.to/khushaljain023/windows-has-a-free-ocr-engine-i-pointed-it-at-my-brokers-position-grid-2ih1)
+
 ![Nifty Desk](docs/assets/hero.png)
 
 ---
