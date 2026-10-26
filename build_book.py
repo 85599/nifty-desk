@@ -220,27 +220,28 @@ def _block(ws, first: int, positions: list[dict], chain: dict, cfg: dict, expiry
         totals.append(total)
         row = total + 2
 
-    if fut_qty:
-        ws.cell(row=row, column=1, value=cfg["symbol"])
-        ws.cell(row=row, column=2, value=fut_qty)
-        ws.cell(row=row, column=3, value=_round(fut_price or 0))
-        for j, level in enumerate(scenarios):
-            col = get_column_letter(4 + j)
-            ws.cell(row=row, column=4 + j, value=(
-                FUT_FORMULA.format(a=anchor_row, r=row, c=col) if anchor_row
-                else f"=+({level}-$C{row})*$B{row}"))
-        totals.append(row)
-        _style_row(ws, row, 3 + len(scenarios))
-        row += 2
+    # the NIFTY line is always written, even at QTY 0: their hand-made sheet has one per expiry and
+    # a future is typed in by hand as often as it comes off the terminal. Sign here is the terminal's
+    # own (plus = long, minus = short), which is the opposite of the option rows above.
+    ws.cell(row=row, column=1, value=cfg["symbol"])
+    ws.cell(row=row, column=2, value=fut_qty)
+    ws.cell(row=row, column=3, value=_round(fut_price or 0))
+    for j, level in enumerate(scenarios):
+        col = get_column_letter(4 + j)
+        ws.cell(row=row, column=4 + j, value=(
+            FUT_FORMULA.format(a=anchor_row, r=row, c=col) if anchor_row
+            else f"=+({level}-$C{row})*$B{row}"))
+    totals.append(row)
+    _style_row(ws, row, 3 + len(scenarios))
 
-    grand = row
+    grand = row + 2
     ws.cell(row=grand, column=3, value="TOTAL")
     for j in range(len(scenarios)):
         col = get_column_letter(4 + j)
         ws.cell(row=grand, column=4 + j, value="=" + "+".join(f"{col}{t}" for t in totals))
     _style_row(ws, grand, 3 + len(scenarios))
 
-    rows = 2 * len(ladder) + (1 if fut_qty else 0)
+    rows = 2 * len(ladder) + 1
     return {"first": first, "last": grand, "rows": rows, "scenarios": len(scenarios), "spot": spot}
 
 
