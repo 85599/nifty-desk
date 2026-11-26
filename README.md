@@ -47,6 +47,8 @@ whole point.
 3. **Live rates** — press *Fetch rates* to pull premiums + spot from the public NSE option chain
    (no API key). The workbook then refreshes itself every 5 minutes.
 4. **Excel out** — one `Sheet1` block per expiry, laid out exactly like a hand-made book.
+5. **Day close** — after the market goes, the day's book is frozen and its `PRO` block is added to
+   the month's profit-loss file. See [Daily profit-loss file](#daily-profit-loss-file).
 
 ---
 
@@ -77,18 +79,48 @@ zero rows you can type into, and the grand `TOTAL`:
 
 ---
 
+## Daily profit-loss file
+
+The desk also keeps the book you would otherwise retype the next morning.
+
+- Every time the workbook is written, that day's book is frozen into `output/snapshots/<date>.json`.
+  The last write of the day is the close — the 15:40 file becomes tomorrow's baseline.
+- Once the market has gone, the desk appends that day's **PRO block** to
+  `output/NIFTY PL <MON>.xlsx`, on a single `TEMP` sheet, so one file rolls the whole month. One
+  block per expiry the book actually holds, labelled `PRO ( 02 nov )`. Press **Profit / Loss file**
+  to write a block yourself, any time, as many times as you want in a day — a press at 11 am is a
+  look at the day so far and does not use up the close block, which still goes in on its own after
+  15:35. On the very first day, with no earlier close to compare to, the block is measured from that
+  morning's first build.
+- Each block is the day in two halves: the carried book on the left (`QTY`, `CL.RATE` = the
+  terminal's own **Net Avg** for the quantity still open, `CUR.RATE` = where that rate is now,
+  `AMT. = (CUR.RATE - CL.RATE) × QTY`), what moved today on the right (`QTY` = the change,
+  `CL.RATE` = the rate it was done at), and the middle column `= today + carried` = the net position
+  after the day. `TOTAL = SUM(left) + SUM(right)`. Net Avg rather than an average of every fill,
+  because the rounds already squared off booked their profit — blending them would put the block
+  out by exactly that amount.
+- Quantities here keep the **terminal's own sign** — buy positive, sell negative — so a positive
+  `AMT.` is money made. That is the reverse of `Sheet1`, where a short is written positive so the
+  `CP IF` formulas come out right.
+- Rates are plain numbers and every amount is a live formula, so the block still recalculates when
+  you edit it. A screenshot of net positions cannot show the price you exited a closed leg at —
+  type it into that row's right-hand `CL.RATE` and the day re-values itself.
+
+---
+
 ## Run it
 
 ### Option 1 — no Python needed
 
-Download `NiftyDesk-win64-v1.0.2.zip` from the
+Download `NiftyDesk-win64-<version>.zip` from the
 [latest release](https://github.com/85599/nifty-desk/releases/latest), unzip it anywhere
 (Desktop is fine) and double-click `NiftyDesk.exe`. A console window opens, your browser tab
 follows a second later. Close the console window to stop it.
 
-Your workbooks land in an `output` folder next to the exe, and settings persist in
-`config.json` beside it. If you put the exe somewhere read-only, both move to
-`%LOCALAPPDATA%\NiftyDesk`.
+Your workbooks land in an `output` folder next to the exe — the priced book (`nifty <expiry>.xlsx`),
+the month's profit-loss file (`NIFTY PL <MON>.xlsx`) and the day-close snapshots beside it — and
+settings persist in `config.json` in the same folder. If you put the exe somewhere read-only, both
+move to `%LOCALAPPDATA%\NiftyDesk`.
 
 **First run, Windows says "Windows protected your PC"?** That's SmartScreen, not a virus — the
 exe is unsigned because code-signing certificates cost money. Click **More info → Run anyway**.

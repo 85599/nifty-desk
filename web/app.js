@@ -17,7 +17,7 @@ const COLS = [
 ];
 const SUSPECT_KEYS = ["strike", "otype", "expiry"];
 
-const state = { rows: [], strikes: {}, spot: null, expiry: "", path: "", cfg: {}, busy: false };
+const state = { rows: [], strikes: {}, spot: null, expiry: "", path: "", plDay: "", plNote: "", cfg: {}, busy: false };
 const $ = (id) => document.getElementById(id);
 
 function log(msg, bad) {
@@ -103,6 +103,7 @@ function render() {
   $("empty").style.display = state.rows.length ? "none" : "block";
   $("posCount").textContent = state.rows.length ? `(${state.rows.length} open)` : "";
   $("btnBuild").disabled = !state.rows.length;
+  $("btnPL").disabled = !state.rows.length;
 }
 
 /* ---------------------------------------------------------------- editing */
@@ -312,6 +313,7 @@ async function build() {
         `rates ${s.live_expiries?.length ? s.live_expiries.join(", ") : "none"}` +
         `${s.skipped_closed ? `, ${s.skipped_closed} closed skipped` : ""}.`);
     toast(`Excel ready: ${s.blocks} expiry page(s), one per print page.`, "ok");
+    reportPl(data.pl);
   } catch (err) {
     log(err.message, true);
     toast(err.message, "bad");
@@ -325,6 +327,37 @@ $("btnOpen").onclick = () => fetch("/api/open", {
   method: "POST", headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ path: state.path }),
 });
+
+async function profitLoss() {
+  $("btnPL").disabled = true;
+  $("btnPL").textContent = "Writing...";
+  try {
+    const res = await fetch("/api/pl", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "could not write the profit-loss file");
+    const s = data.summary;
+    log(`Wrote <b>${data.path}</b> - ${s.blocks} PRO block(s) for ${s.day}, carried from the ` +
+        `${s.carried_from} book, ${s.rows} strike rows. Each cell is a live formula.`);
+    toast(`Profit-loss block added (${s.blocks}).`, "ok");
+  } catch (err) {
+    log(err.message, true);
+    toast(err.message, "bad");
+  } finally {
+    $("btnPL").disabled = !state.rows.length;
+    $("btnPL").textContent = "Profit / Loss file";
+  }
+}
+function reportPl(pl) {
+  if (!pl) return;
+  if (pl.day && pl.day !== state.plDay) {
+    state.plDay = pl.day;
+    log(`Today's PRO block is in <b>${pl.path}</b>, carried from the ${pl.carried_from} book.`);
+  } else if (pl.note && pl.note !== state.plNote) {
+    state.plNote = pl.note;
+    log(pl.note);
+  }
+}
+$("btnPL").onclick = profitLoss;
 
 async function fillExpiries(dates, selected) {
   const sel = $("expiry");
@@ -356,6 +389,7 @@ $("expiry").onchange = () => { state.expiry = $("expiry").value; };
       state.spot = st.live.spot; state.expiry = st.live.expiry;
     }
     showWarnings(st.warnings);
+    reportPl(st.pl);
     const ex = await (await fetch("/api/expiries")).json();
     await fillExpiries(ex.expiry_dates, state.cfg.expiry);
     log("Desk ready. Drop a screenshot or press Ctrl+V.");

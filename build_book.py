@@ -128,7 +128,7 @@ def _style_row(ws, row: int, last_col: int) -> None:
         cell.border = BOX
 
 
-def _round(value) -> int:
+def round_rate(value) -> int:
     """The sheet is hand-typed in round figures, so every rate goes in as a whole number."""
     try:
         return int(round(float(value or 0)))
@@ -160,7 +160,7 @@ def _section(ws, row: int, scenarios: list[float], kind: str, ladder: list[float
         qty = legs.get((expiry, strike, kind), 0)
         # NSE can have no quote for a strike the book holds, so fall back to the terminal's own
         # rate for it rather than pricing a real position at zero.
-        premium = _round((rates.get(strike, {}).get(kind)
+        premium = round_rate((rates.get(strike, {}).get(kind)
                           or cost.get((expiry, strike, kind), 0)) if qty else 0)
         ws.cell(row=r, column=1, value=strike)
         ws.cell(row=r, column=2, value=qty)
@@ -201,7 +201,7 @@ def _block(ws, first: int, positions: list[dict], chain: dict, cfg: dict, expiry
     ladder = sorted(set(ladder_strikes(spot, step, span)) | held["CE"] | held["PE"])
 
     ws.cell(row=first, column=1, value=cfg["symbol"])
-    ws.cell(row=first, column=3, value=_round(spot))
+    ws.cell(row=first, column=3, value=round_rate(spot))
     ws.cell(row=first, column=10, value=expiry_label(expiry)).alignment = CENTER
     ws.cell(row=first + 1, column=1, value="DATE:- ")
     date_cell = ws.cell(row=first + 1, column=2, value=dt.date.today())
@@ -225,7 +225,7 @@ def _block(ws, first: int, positions: list[dict], chain: dict, cfg: dict, expiry
     # own (plus = long, minus = short), which is the opposite of the option rows above.
     ws.cell(row=row, column=1, value=cfg["symbol"])
     ws.cell(row=row, column=2, value=fut_qty)
-    ws.cell(row=row, column=3, value=_round(fut_price or 0))
+    ws.cell(row=row, column=3, value=round_rate(fut_price or 0))
     for j, level in enumerate(scenarios):
         col = get_column_letter(4 + j)
         ws.cell(row=row, column=4 + j, value=(

@@ -21,6 +21,7 @@ from flask import Flask, jsonify, request, send_from_directory
 import build_book
 import nse_live
 import parse_grid
+import pl_book
 
 FROZEN = getattr(sys, "frozen", False)
 # PyInstaller unpacks read-only data files to a temp dir at startup
@@ -65,6 +66,7 @@ DEFAULT_CONFIG = {
 
 STATE: dict = {"chains": {}, "chain": {}, "records": [], "warnings": [], "image": "",
                "config": dict(DEFAULT_CONFIG),
+               "pl": {"path": "", "day": "", "carried_from": "", "note": ""},
                "auto": {"enabled": True, "seconds": 300, "last_ts": 0.0, "last": "", "note": "",
                         "path": ""}}
 LOCK = threading.Lock()
@@ -192,6 +194,10 @@ def book_path(cfg: dict, chains: dict) -> str:
     return os.path.join(out_dir, f"nifty {expiry}.xlsx")
 
 
+def out_dir() -> str:
+    return STATE["config"].get("output_dir") or OUTPUT_DIR
+
+
 def write_book() -> tuple[str, dict] | None:
     """Rebuild the workbook from what the desk currently holds. Raises PermissionError if Excel
     has the file open - the caller decides whether that is an error or just a skipped refresh."""
@@ -206,7 +212,56 @@ def write_book() -> tuple[str, dict] | None:
         {"symbol": cfg["symbol"], "spot": spot, "step": int(cfg.get("step") or 50),
          "span": float(cfg.get("span") or 600)})
     STATE["auto"]["path"] = path
+    try:
+        pl_book.save_snapshot(out_dir(), positions, chains, cfg)
+    except OSError:
+        pass
+    auto_profit_loss()
     return path, summary
+
+
+def write_pl(force: bool = False) -> tuple[str, dict] | None:
+    """Append today's PRO block to the month's profit-loss file, priced against the last close.
+
+    Without `force` it writes at most one block per day, because the refresher rebuilds the book
+    every few minutes and each rebuild would otherwise add another copy of the same block.
+    """
+    cfg = STATE["config"]
+    day = dt.date.today()
+    where = out_dir()
+    if not force and pl_book.was_written(where, day):
+        return None
+    positions, chains = STATE.get("records") or [], STATE.get("chains") or {}
+    if not positions:
+        STATE["pl"]["note"] = "Nothing to price yet - drop a screenshot first."
+        return None
+    carried = pl_book.previous_snapshot(where, day)
+    if not carried:
+        STATE["pl"]["note"] = ("Nothing to compare against yet. Build the book once first - that "
+                               "saves the day's close, and blocks can be written from then on.")
+        return None
+    info = pl_book.build_pl(pl_book.pl_path(where, cfg, day), carried[1], positions, chains, cfg, day)
+    info["carried_from"] = carried[0]        # the stamp, so both log lines name the same book
+    # only the close write is once-a-day. A press at 11 am is a look at the day so far, and must not
+    # use up the block the desk still owes him after 15:35, when the rates are the day's last.
+    if pl_book.is_close(dt.datetime.now()):
+        pl_book.mark_written(where, day)
+    with LOCK:
+        STATE["pl"].update(path=info["path"], day=info["day"], carried_from=carried[0], note="")
+    return info["path"], info
+
+
+def auto_profit_loss() -> None:
+    """Once the market has gone, that day's block goes into the profit-loss file on its own."""
+    if not pl_book.is_close(dt.datetime.now()):
+        return
+    try:
+        write_pl()
+    except PermissionError:
+        STATE["pl"]["note"] = ("Excel has the profit-loss file open, so today's block was skipped - "
+                               "close it and press Profit / Loss.")
+    except Exception as exc:
+        STATE["pl"]["note"] = str(exc)[:180]
 
 
 def auto_loop() -> None:
@@ -388,7 +443,22 @@ def api_build():
     except Exception as exc:
         return jsonify(error=f"Could not write the workbook: {exc}"), 500
     save_config(cfg)
-    return jsonify(summary=summary, path=path)
+    return jsonify(summary=summary, path=path, pl=STATE["pl"])
+
+
+@app.post("/api/pl")
+def api_pl():
+    """Today's block in the month's profit-loss file, on demand (the close writes one by itself)."""
+    try:
+        touched = write_pl(force=True)
+    except PermissionError:
+        return jsonify(error="Excel has that file open. Close it and try again."), 423
+    except Exception as exc:
+        return jsonify(error=f"Could not write the profit-loss file: {exc}"), 500
+    if not touched:
+        return jsonify(error=STATE["pl"]["note"] or "Nothing to write yet."), 400
+    path, info = touched
+    return jsonify(path=path, summary=info)
 
 
 @app.post("/api/open")
@@ -413,6 +483,7 @@ def api_state():
                    if chain else None,
                    quoted_expiries=sorted(STATE.get("chains") or {}),
                    auto=auto_status(),
+                   pl=STATE["pl"],
                    has_chain=bool(chain))
 
 
