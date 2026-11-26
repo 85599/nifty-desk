@@ -72,7 +72,7 @@
   figure{margin:0}
   figure img{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:12px}
   figcaption{font-size:13.5px;color:var(--muted);margin-top:10px;text-align:center}
-  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;margin-top:8px}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:20px;margin-top:8px}
   .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
   .step b{display:block;font-size:16px;margin-bottom:6px}
   .step i{
@@ -157,7 +157,7 @@
 <section id="how">
   <div class="wrap">
     <h2>How it works</h2>
-    <p class="lede">Four steps, and the only one that touches the internet is the public NSE quote request.</p>
+    <p class="lede">Five steps, and the only one that touches the internet is the public NSE quote request.</p>
     <figure>
       <img src="assets/demo.gif" alt="Nifty Desk flow: broker screenshot loaded, positions parsed, Excel workbook generated" width="1000" height="642" loading="lazy">
       <figcaption>Screenshot in → positions parsed → workbook out.</figcaption>
@@ -167,6 +167,7 @@
       <div class="step"><i>2</i><b>Positions parsed</b><p>Non-NIFTY and fully-closed rows are filtered out; lot size is auto-detected from the quantities.</p></div>
       <div class="step"><i>3</i><b>Live rates</b><p>Spot and premiums come from the public NSE option chain. No API key. The book then refreshes itself every 5 minutes.</p></div>
       <div class="step"><i>4</i><b>Excel out</b><p>One <code>Sheet1</code> block per expiry, each printing on its own page.</p></div>
+      <div class="step"><i>5</i><b>Day close</b><p>Once the market goes, the day’s book is frozen and its <code>PRO</code> block is added to the month’s profit-loss file — one rolling <code>NIFTY PL &lt;MON&gt;.xlsx</code> — the previous close on one side, today’s moves on the other, every cell a live formula.</p></div>
     </div>
   </div>
 </section>
@@ -216,7 +217,7 @@
       <li>Double-click <code>NiftyDesk.exe</code>. A console window opens and your browser follows a second later.</li>
       <li>Close the console window to stop.</li>
     </ol>
-    <p class="fine" style="margin-bottom:16px">Workbooks land in an <code>output</code> folder next to the exe; settings persist in <code>config.json</code> beside it. If the exe sits somewhere read-only, both move to <code>%LOCALAPPDATA%\NiftyDesk</code>.</p>
+    <p class="fine" style="margin-bottom:16px">Workbooks land in an <code>output</code> folder next to the exe — the priced book, the month’s profit-loss file and the day-close snapshots; settings persist in <code>config.json</code> beside them. If the exe sits somewhere read-only, both move to <code>%LOCALAPPDATA%\NiftyDesk</code>.</p>
     <div class="warn"><b>First run: “Windows protected your PC”?</b> That’s SmartScreen, not a virus. The exe is unsigned because code-signing certificates cost money. Click <b>More info → Run anyway</b>. The full source is public, so you can also build it yourself with <code>build_exe.bat</code>.</div>
 
     <h3 style="font-size:18px;margin:30px 0 8px">Option 2 — from source</h3>
@@ -250,6 +251,24 @@ python server.py</code></pre>
         <p style="margin-bottom:0">If the log shows the raw text it read and it still looks wrong,
           send that screenshot — brokers ship different ODIN builds and each one gets the parser
           tuned to it.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>What is the profit-loss file for?</summary>
+      <div class="body">
+        <p>The priced book answers <i>what am I worth today</i>. The profit-loss file answers
+          <i>what did today do to me</i>, which is the line you otherwise retype the next morning.</p>
+        <ul class="ticks">
+          <li>Every write freezes that day’s book, so the last one before 15:40 becomes the next day’s baseline.</li>
+          <li>After the market goes, one <code>PRO ( date )</code> block per expiry is appended to
+            <code>NIFTY PL &lt;MON&gt;.xlsx</code> — previous close and its rates on the left, today’s
+            additions and exits on the right, the net position in the middle.</li>
+          <li>Carry rates are the terminal’s own <b>Net Avg</b> for the quantity still open, not an
+            average of every fill — the rounds that squared off already booked their profit.</li>
+          <li>Amounts are live formulas: a leg you closed cannot carry its exit price in a screenshot,
+            so type it into that row and the block re-values itself.</li>
+        </ul>
       </div>
     </details>
 
