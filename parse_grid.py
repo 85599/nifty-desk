@@ -36,9 +36,22 @@ HEADER_KEYS = {
     "mktprice": ("market", "mkt", "mrkt"),
 }
 
-def looks_like_expiry(token: str) -> bool:
-    """'19OCT20...' and the OCR's '190CT20...' both count; plain numbers do not."""
+# OCR reads the day digits of an expiry as their look-alike letters ("01DEC2026" arrives as
+# "OIDEC2026"), so undo the confusions before testing the token. Only the leading two characters
+# are touched - translating the month too would destroy the very letters being matched.
+OCR_DIGIT = str.maketrans({"O": "0", "Q": "0", "D": "0", "I": "1", "L": "1", "Z": "2", "S": "5",
+                           "B": "8", "G": "6", "T": "7"})
+
+
+def _expiry_core(token: str) -> str:
     s = re.sub(r"[^A-Za-z0-9]", "", token.upper())
+    return s[:2].translate(OCR_DIGIT) + s[2:]
+
+
+def looks_like_expiry(token: str) -> bool:
+    """'19OCT20...', the OCR's '190CT20...' and a corrupted day ('OIDEC2026') all count;
+    plain numbers do not."""
+    s = _expiry_core(token)
     if not re.match(r"^\d{2}", s) or len(s) < 4:
         return False
     frag = s[2:5].replace("0", "O").replace("1", "I")
@@ -322,8 +335,9 @@ def clean_option_type(text: str) -> str:
 
 
 def parse_expiry_token(text: str) -> tuple[int | None, int | None, str]:
-    """'19OCT20...' / '190CT20..' -> (19, 10, '20'). Truncated years come back as digits seen."""
-    s = re.sub(r"[^A-Za-z0-9]", "", text.upper())
+    """'19OCT20...' / '190CT20..' / 'OIDEC2026' -> (19, 10, '20'). Truncated years come back as
+    digits seen."""
+    s = _expiry_core(text)
     m = re.match(r"(\d{2})", s)
     if not m:
         return None, None, ""
